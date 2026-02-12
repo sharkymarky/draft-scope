@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from draft_scope.pipelines import DraftScopePlaceholderPipeline
+
 PLUGIN_ID = "draft-scope"
 
 try:
@@ -17,10 +19,11 @@ except Exception:  # pragma: no cover - allows import outside Scope runtime
 def register_pipelines(register: Any) -> None:
     """Register Scope pipelines.
 
-    Draft Scope currently ships only frontend assets, so there are no
-    Python pipelines to register yet. Keeping this hook allows Scope to
-    import and load the plugin cleanly.
+    Draft Scope registers a placeholder pipeline so Scope can discover
+    and load the plugin's Python pipeline entrypoint.
     """
+
+    register(DraftScopePlaceholderPipeline)
 
 
 def get_plugin() -> dict[str, Any]:
