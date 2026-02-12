@@ -44,8 +44,8 @@ A host app can update `data-typing-input` on the mount element to feed typing da
 
 ## Installing in Daydream Scope
 
-This repository includes Python packaging metadata (`setup.py`) with Scope entry-point registration (`[scope] draft_scope = draft_scope.plugin`) so Scope can discover and import the plugin module during installation.
+This repository includes Python packaging metadata (`setup.py`) with Scope entry-point registration (`[scope] draft-scope = draft_scope.plugin:get_plugin`) so Scope can discover and import the plugin module during installation.
 
 After installing/reloading the plugin in Scope, select **Draft Scope** from the pipeline side menu.
 
-Note: this repo currently registers a minimal placeholder pipeline (`draft-scope-placeholder`) so the plugin appears in the picker while frontend-only functionality is integrated.
+The plugin now includes a simple camera-input pipeline (`draft-scope-camera-text`) that reacts to prompt text with a lightweight color-grade effect.
