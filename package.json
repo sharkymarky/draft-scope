@@ -1,0 +1,8 @@
+{
+  "name": "draft-scope",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --experimental-strip-types tests/signals.test.ts"
+  }
+}
