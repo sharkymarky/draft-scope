@@ -44,5 +44,5 @@ A host app can update `data-typing-input` on the mount element to feed typing da
 
 ## Installing in Daydream Scope
 
-This repository includes Python packaging metadata (`setup.py`) and plugin entry-point registration (`draft_scope.plugin:get_plugin`) so Scope can discover it in plugin pickers after install. It publishes entry points in multiple common Scope/Daydream groups to maximize compatibility across versions.
+This repository includes Python packaging metadata (`setup.py`) and entry-point registration (`draft_scope.plugin:get_plugin`) so Scope can discover it in plugin pickers after install.
 
