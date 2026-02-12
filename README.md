@@ -41,3 +41,8 @@ src/
 4. `render.ts` consumes `EngineState` and draws each frame to a `<canvas>`.
 
 A host app can update `data-typing-input` on the mount element to feed typing data into the plugin.
+
+## Installing in Daydream Scope
+
+This repository now includes Python packaging metadata (`setup.py`) so Scope can install it from a Git URL during plugin dependency resolution.
+
