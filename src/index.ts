@@ -44,3 +44,5 @@ export function createDraftScopePlugin(): DraftScopePlugin {
     }
   };
 }
+
+export default createDraftScopePlugin;
