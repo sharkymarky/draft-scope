@@ -1,14 +1,16 @@
-"""Scope schema for the Draft Scope placeholder pipeline."""
+"""Scope schema for the Draft Scope camera + prompt pipeline."""
 
 from scope.core.pipelines.base_schema import BasePipelineConfig, ModeDefaults
 
 
 class DraftScopePlaceholderConfig(BasePipelineConfig):
-    """Minimal config so Draft Scope appears in Scope's pipeline picker."""
+    """Simple prompt-driven camera effect shown in Scope's pipeline picker."""
 
-    pipeline_id = "draft-scope-placeholder"
+    pipeline_id = "draft-scope-camera-text"
     pipeline_name = "Draft Scope"
-    pipeline_description = "Placeholder pipeline that keeps Draft Scope selectable in Scope UI."
+    pipeline_description = (
+        "Uses camera frames as input and applies a lightweight prompt-driven color effect."
+    )
 
-    supports_prompts = False
-    modes = {"text": ModeDefaults(default=True)}
+    supports_prompts = True
+    modes = {"video": ModeDefaults(default=True)}
