@@ -15,11 +15,12 @@ except Exception:  # pragma: no cover - allows import outside Scope runtime
 
 @hookimpl
 def register_pipelines(register: Any) -> None:
-    """Register pipelines so Draft Scope appears in Scope pipeline pickers."""
+    """Register Scope pipelines.
 
-    from .pipelines import DraftScopePlaceholderPipeline
-
-    register(DraftScopePlaceholderPipeline)
+    Draft Scope currently ships only frontend assets, so there are no
+    Python pipelines to register yet. Keeping this hook allows Scope to
+    import and load the plugin cleanly.
+    """
 
 
 def get_plugin() -> dict[str, Any]:

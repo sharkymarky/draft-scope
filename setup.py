@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="draft-scope",
-    version="0.1.4",
+    version="0.1.2",
     description="Draft Scope plugin package metadata for Daydream Scope",
     packages=find_packages(),
     include_package_data=True,

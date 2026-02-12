@@ -48,4 +48,4 @@ This repository includes Python packaging metadata (`setup.py`) with Scope entry
 
 After installing/reloading the plugin in Scope, select **Draft Scope** from the pipeline side menu.
 
-Note: this repo currently registers a minimal video pass-through placeholder pipeline (`draft-scope`) so the plugin appears in the picker while frontend-only functionality is integrated.
+Note: this repo currently registers a minimal placeholder pipeline (`draft-scope-placeholder`) so the plugin appears in the picker while frontend-only functionality is integrated.
