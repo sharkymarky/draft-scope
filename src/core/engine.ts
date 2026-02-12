@@ -1,64 +1,53 @@
-import {
-  createRenderState,
-  defaultRenderConfig,
-  renderFrame,
-  type FrameOutput,
-  type RenderConfig,
-  type RenderSignals,
-  type RenderState,
-} from './render';
+import { extractTypingMetrics, type TypingSnapshot } from "./signals.js";
+import type { TypingMetrics } from "./signals.js";
 
-export interface EngineInput {
-  charDelta: number;
-  deleteDensity: number;
-  pauseDurationMs: number;
-  segmentIndex: number;
-  majorPunctuationCount: number;
-  newlineCount: number;
+export interface EngineState {
+  readonly now: number;
+  readonly metrics: TypingMetrics;
 }
 
-export interface EngineFrame extends FrameOutput {
-  timestampMs: number;
+export interface EngineHooks {
+  readSnapshot(): TypingSnapshot;
+  update(state: EngineState): void;
 }
 
-export class RenderEngine {
-  private readonly config: RenderConfig;
+export interface EngineController {
+  start(): void;
+  stop(): void;
+}
 
-  private readonly state: RenderState;
+export function createEngine(hooks: EngineHooks): EngineController {
+  let frameHandle = 0;
+  let previousSnapshot: TypingSnapshot | null = null;
 
-  private lastTimestampMs: number | null = null;
+  const frame = () => {
+    const snapshot = hooks.readSnapshot();
+    const metrics = extractTypingMetrics(snapshot, previousSnapshot);
 
-  constructor(config: Partial<RenderConfig> = {}) {
-    this.config = { ...defaultRenderConfig, ...config };
-    this.state = createRenderState(this.config);
-  }
+    hooks.update({
+      now: snapshot.timestamp,
+      metrics
+    });
 
-  public step(input: EngineInput, timestampMs: number): EngineFrame {
-    const dt = this.lastTimestampMs === null ? 16 : Math.max(0, timestampMs - this.lastTimestampMs);
-    this.lastTimestampMs = timestampMs;
+    previousSnapshot = snapshot;
+    frameHandle = requestAnimationFrame(frame);
+  };
 
-    const signals: RenderSignals = {
-      charDelta: input.charDelta,
-      deleteDensity: input.deleteDensity,
-      pauseDurationMs: input.pauseDurationMs,
-      segmentIndex: input.segmentIndex,
-      majorPunctuationCount: input.majorPunctuationCount,
-      newlineCount: input.newlineCount,
-    };
+  return {
+    start() {
+      if (frameHandle !== 0) {
+        return;
+      }
 
-    const frame = renderFrame(signals, dt, this.state, this.config);
+      frameHandle = requestAnimationFrame(frame);
+    },
+    stop() {
+      if (frameHandle === 0) {
+        return;
+      }
 
-    return {
-      ...frame,
-      timestampMs,
-    };
-  }
-
-  public snapshot(): RenderState {
-    return {
-      ...this.state,
-      fastLayer: this.state.fastLayer.slice(),
-      slowLayer: this.state.slowLayer.slice(),
-    };
-  }
+      cancelAnimationFrame(frameHandle);
+      frameHandle = 0;
+    }
+  };
 }

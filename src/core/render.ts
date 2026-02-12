@@ -1,154 +1,49 @@
-export interface RenderSignals {
-  charDelta: number;
-  deleteDensity: number;
-  pauseDurationMs: number;
-  segmentIndex: number;
-  majorPunctuationCount: number;
-  newlineCount: number;
+import type { EngineState } from "./engine.js";
+
+export interface VisualLayer {
+  update(state: EngineState): void;
+  destroy(): void;
 }
 
-export interface RenderConfig {
-  fastGain: number;
-  memoryHalfLife: number;
-  eraseRate: number;
-  phaseThreshold: number;
-  bufferSize: number;
-}
+export async function createVisualLayer(host: HTMLElement): Promise<VisualLayer> {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
 
-export interface RenderState {
-  fastLayer: Float32Array;
-  slowLayer: Float32Array;
-  writeHead: number;
-  phase: number;
-  lastSegmentIndex: number;
-  lastMajorPunctuationCount: number;
-  lastNewlineCount: number;
-}
-
-export interface FrameOutput {
-  fastLayer: Float32Array;
-  slowLayer: Float32Array;
-  phase: number;
-  resetTriggered: boolean;
-}
-
-export const defaultRenderConfig: RenderConfig = {
-  fastGain: 0.9,
-  memoryHalfLife: 1300,
-  eraseRate: 0.35,
-  phaseThreshold: 2,
-  bufferSize: 128,
-};
-
-const EPSILON = 1e-6;
-
-const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
-
-export const createRenderState = (config: RenderConfig = defaultRenderConfig): RenderState => ({
-  fastLayer: new Float32Array(config.bufferSize),
-  slowLayer: new Float32Array(config.bufferSize),
-  writeHead: 0,
-  phase: 0,
-  lastSegmentIndex: 0,
-  lastMajorPunctuationCount: 0,
-  lastNewlineCount: 0,
-});
-
-const shouldResetStructure = (
-  signals: RenderSignals,
-  state: RenderState,
-  config: RenderConfig,
-): boolean => {
-  const punctuationJump = signals.majorPunctuationCount - state.lastMajorPunctuationCount;
-  const newlineJump = signals.newlineCount - state.lastNewlineCount;
-
-  return punctuationJump >= config.phaseThreshold || newlineJump >= 1;
-};
-
-const updateFastLayer = (
-  signals: RenderSignals,
-  state: RenderState,
-  config: RenderConfig,
-): void => {
-  const pulse = Math.abs(signals.charDelta) * config.fastGain;
-  const turbulence = signals.deleteDensity * config.fastGain;
-  const occlusion = clamp01(signals.deleteDensity) * pulse;
-  const fastValue = Math.max(0, pulse + turbulence - occlusion);
-
-  state.fastLayer[state.writeHead] = fastValue;
-
-  const smoothing = 0.88;
-  for (let i = 0; i < state.fastLayer.length; i += 1) {
-    if (i === state.writeHead) continue;
-    state.fastLayer[i] *= smoothing;
-  }
-};
-
-const updateSlowLayer = (
-  signals: RenderSignals,
-  dt: number,
-  state: RenderState,
-  config: RenderConfig,
-): void => {
-  const safeHalfLife = Math.max(config.memoryHalfLife, EPSILON);
-  const decay = Math.exp((-Math.max(dt, 0) * Math.LN2) / safeHalfLife);
-  const erase = clamp01(config.eraseRate * signals.deleteDensity);
-
-  const segmentDrift = Math.max(0, signals.segmentIndex - state.lastSegmentIndex);
-  const pauseDrive = clamp01(signals.pauseDurationMs / Math.max(config.phaseThreshold * 300, 1));
-  const accumulation = pauseDrive * (1 + segmentDrift * 0.25);
-
-  for (let i = 0; i < state.slowLayer.length; i += 1) {
-    const decayed = state.slowLayer[i] * decay;
-    state.slowLayer[i] = decayed * (1 - erase);
+  if (!context) {
+    throw new Error("Could not create 2D rendering context.");
   }
 
-  const previousIndex = (state.writeHead - 1 + state.slowLayer.length) % state.slowLayer.length;
-  const stack = state.slowLayer[previousIndex] * 0.45;
-  const smear = state.slowLayer[(state.writeHead + 1) % state.slowLayer.length] * 0.25;
-  state.slowLayer[state.writeHead] += accumulation + stack + smear;
-};
+  const resize = () => {
+    canvas.width = Math.max(320, host.clientWidth || 800);
+    canvas.height = 240;
+  };
 
-const applyStructuralReset = (state: RenderState): void => {
-  state.phase = 0;
+  resize();
+  host.appendChild(canvas);
 
-  for (let i = 0; i < state.fastLayer.length; i += 1) {
-    state.fastLayer[i] *= 0.2;
-  }
+  const update = (state: EngineState) => {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#121212";
+    context.fillRect(0, 0, canvas.width, canvas.height);
 
-  for (let i = 0; i < state.slowLayer.length; i += 1) {
-    state.slowLayer[i] *= 0.55;
-  }
-};
+    const barWidth = Math.min(canvas.width - 32, Math.round(state.metrics.burstScore * (canvas.width - 32)));
 
-export const renderFrame = (
-  signals: RenderSignals,
-  dt: number,
-  state: RenderState,
-  config: RenderConfig = defaultRenderConfig,
-): FrameOutput => {
-  const resetTriggered = shouldResetStructure(signals, state, config);
+    context.fillStyle = "#5eead4";
+    context.fillRect(16, 56, barWidth, 24);
 
-  if (resetTriggered) {
-    applyStructuralReset(state);
-  }
-
-  updateFastLayer(signals, state, config);
-  updateSlowLayer(signals, dt, state, config);
-
-  const segmentAdvance = Math.max(0, signals.segmentIndex - state.lastSegmentIndex);
-  state.phase += segmentAdvance;
-
-  state.lastSegmentIndex = signals.segmentIndex;
-  state.lastMajorPunctuationCount = signals.majorPunctuationCount;
-  state.lastNewlineCount = signals.newlineCount;
-
-  state.writeHead = (state.writeHead + 1) % state.fastLayer.length;
+    context.fillStyle = "#f5f5f5";
+    context.font = "16px monospace";
+    context.fillText(
+      `chars/s: ${state.metrics.charsPerSecond.toFixed(2)} | wpm: ${state.metrics.wordsPerMinute.toFixed(1)} | length: ${state.metrics.inputLength}`,
+      16,
+      32
+    );
+  };
 
   return {
-    fastLayer: state.fastLayer,
-    slowLayer: state.slowLayer,
-    phase: state.phase,
-    resetTriggered,
+    update,
+    destroy() {
+      canvas.remove();
+    }
   };
-};
+}
